@@ -13,7 +13,7 @@ class Map extends Component {
             lat: 0,
             desc: "",
         },
-        endPoint: {
+        antipode: {
             long: 0,
             lat: 0,
             desc: "",
@@ -22,11 +22,32 @@ class Map extends Component {
 
     handleSubmit(event) {
         event.preventDefault();
+
+        let selectedLong = Number(event.target[0].value);
+        let selectedLat = Number(event.target[1].value);
+
+        let antipodeLong = selectedLong;
+
+        if(selectedLong > 0)
+        {
+            antipodeLong = antipodeLong - 180;
+        }
+        else
+        {
+            antipodeLong = antipodeLong + 180;
+        }
         
         this.setState({
             startPoint: {
-                long: event.target[0].value,
-                lat: event.target[1].value,
+                long: selectedLong,
+                lat: selectedLat,
+            }
+        });
+
+        this.setState({
+            antipode: {
+                long: antipodeLong,
+                lat: (selectedLat * -1)
             }
         });
       }
@@ -36,7 +57,7 @@ class Map extends Component {
             <React.Fragment>
 
             <LeafletMap
-                center={[this.state.startPoint.long, this.state.startPoint.lat]}
+                center={[this.state.startPoint.lat, this.state.startPoint.long]}
                 zoom={3}
                 attributionControl={true}
                 zoomControl={true}
@@ -51,21 +72,27 @@ class Map extends Component {
                     url='http://{s}.tile.osm.org/{z}/{x}/{y}.png'
                 />
 
-                <Marker position={[this.state.startPoint.long, this.state.startPoint.lat]}>
+                <Marker position={[this.state.startPoint.lat, this.state.startPoint.long]}>
                 <Popup>
                     {this.state.startPoint.desc}
                 </Popup>
                 </Marker>
+
+                <Marker position={[this.state.antipode.lat, this.state.antipode.long]}>
+                <Popup>
+                    {this.state.antipode.desc}
+                </Popup>
+                </Marker>
             </LeafletMap>
 
-            <div class="startMenu">
+            <div className="startMenu">
             <h3>Choose location</h3>
                 <form onSubmit={this.handleSubmit}>
-                    <label for="long">Longitude</label>
-                    <input type="number" id="long" name="long"/>
+                    <label htmlFor="long">Longitude</label>
+                    <input type="number" id="long" name="long" max="180" min="-180"/>
 
-                    <label for="lat">Latitude </label>
-                    <input type="number" id="lat" name="lat"/>
+                    <label htmlFor="lat">Latitude </label>
+                    <input type="number" id="lat" name="lat" max="90" min="-90"/>
 
                     <input type="submit" value="Search"></input>
                 </form>

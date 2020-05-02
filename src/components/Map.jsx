@@ -41,13 +41,15 @@ class Map extends Component {
             startPoint: {
                 long: selectedLong,
                 lat: selectedLat,
+                desc: "The point you have selected is at long: " + selectedLong + " | lat: " + selectedLat
             }
         });
 
         this.setState({
             antipode: {
                 long: antipodeLong,
-                lat: (selectedLat * -1)
+                lat: (selectedLat * -1),
+                desc: "The antipode of the selected coordinate is long: " + antipodeLong + " | lat: " + (selectedLat * -1)
             }
         });
       }
@@ -72,27 +74,31 @@ class Map extends Component {
                     url='http://{s}.tile.osm.org/{z}/{x}/{y}.png'
                 />
 
-                <Marker position={[this.state.startPoint.lat, this.state.startPoint.long]}>
-                <Popup>
-                    {this.state.startPoint.desc}
-                </Popup>
-                </Marker>
+                { this.state.startPoint.lat == 0 && this.state.startPoint.long == 0 ? "" : 
+                    <Marker position={[this.state.startPoint.lat, this.state.startPoint.long]}>
+                    <Popup>
+                        {this.state.startPoint.desc}
+                    </Popup>
+                    </Marker> 
+                }
 
-                <Marker position={[this.state.antipode.lat, this.state.antipode.long]}>
-                <Popup>
-                    {this.state.antipode.desc}
-                </Popup>
-                </Marker>
+                { this.state.antipode.lat == 0 && this.state.antipode.long == 0 ? "" :
+                    <Marker position={[this.state.antipode.lat, this.state.antipode.long]}>
+                        <Popup>
+                            {this.state.antipode.desc}
+                        </Popup>
+                    </Marker>  
+                }
             </LeafletMap>
 
             <div className="startMenu">
             <h3>Choose location</h3>
                 <form onSubmit={this.handleSubmit}>
                     <label htmlFor="long">Longitude</label>
-                    <input type="number" id="long" name="long" max="180" min="-180"/>
+                    <input type="number" id="long" name="long" max="180" min="-180" step="0.000001"/>
 
                     <label htmlFor="lat">Latitude </label>
-                    <input type="number" id="lat" name="lat" max="90" min="-90"/>
+                    <input type="number" id="lat" name="lat" max="90" min="-90" step="0.000001"/>
 
                     <input type="submit" value="Search"></input>
                 </form>

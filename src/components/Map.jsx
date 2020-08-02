@@ -6,6 +6,7 @@ class Map extends Component {
         super();
         this.handleSubmit = this.handleSubmit.bind(this);
         this.searchForCity = this.searchForCity.bind(this);
+        this.searchForClosestCity = this.searchForClosestCity.bind(this);
     };
 
     state = {
@@ -19,8 +20,20 @@ class Map extends Component {
             lat: 0,
             desc: "",
         },
+
         cities: [],
         error: null,
+
+        closestCityToPoint: {
+            long: 0,
+            lat: 0,
+            desc: "",
+        },
+        clossestCityToAntipode: {
+            long: 0,
+            lat: 0,
+            desc: "",
+        },
     };
 
     handleSubmit(event) {
@@ -42,15 +55,21 @@ class Map extends Component {
                 selectedLong = findCity.lon;
                 selectedLat = findCity.lat;
                 pointDesc = 'You have selected the city of "' + findCity.display_name +  '" which is at ' + selectedLong + ' longitude and at ' + selectedLat + ' Latitude';
+
+                document.getElementById("long").value = findCity.lon;
+                document.getElementById("lat").value = findCity.lat;
+            }
+            else {
+                this.searchForClosestCity(selectedLong, selectedLat, "point");
             }
 
             if(selectedLong > 0)
             {
-                antipodeLong = antipodeLong - 180;
+                antipodeLong = Number(selectedLong) - 180;
             }
             else
             {
-                antipodeLong = antipodeLong + 180;
+                antipodeLong = Number(selectedLong) + 180;
             }
             
             this.setState({
@@ -61,17 +80,24 @@ class Map extends Component {
                 }
             });
 
+            let antipodeLat = (selectedLat * -1);
+
             this.setState({
                 antipode: {
                     long: antipodeLong,
-                    lat: (selectedLat * -1),
+                    lat: antipodeLat,
                     desc: "The antipode of the selected coordinate is long: " + antipodeLong + " | lat: " + (selectedLat * -1)
                 }
             });
+
+            this.searchForClosestCity(antipodeLong, antipodeLat, "antipode");
         }
       }
 
     searchForCity() {
+        document.getElementById("long").value = "";
+        document.getElementById("lat").value = "";
+
         let searchValue = document.getElementById("city").value;
         let searchUrl = "https://nominatim.openstreetmap.org/search?city=" + searchValue + "&format=json";
 
@@ -94,6 +120,47 @@ class Map extends Component {
                 })
         }
     };
+
+    searchForClosestCity(long, lat, option)
+    {
+        let roundedLong = Number(long);
+        roundedLong = roundedLong.toFixed(5);
+
+        let roundedLat = Number(lat);
+        roundedLat = roundedLat.toFixed(5);
+
+        let searchUrl = "https://nominatim.openstreetmap.org/reverse?format=json&lat=" + roundedLat + "&lon=" + roundedLong + "&zoom=0";
+
+        fetch(searchUrl)
+            .then(res => res.json())
+                .then((result) => {
+                        if(option == "point")
+                        {
+                            this.setState({
+                                closestCityToPoint: {
+                                    long: result.lon,
+                                    lat: result.lat,
+                                    desc: "The closest city to the coordinates of long: " + long + "| lat: " + lat + " is the city of " + result.display_name + " at long: " + result.lon + " and lat: " + result.lat
+                                    }
+                                });
+                        }
+                        else if(option == "antipode")
+                        {
+                            this.setState({
+                                clossestCityToAntipode: {
+                                    long: result.lon,
+                                    lat: result.lat,
+                                    desc: "The closest city to the antipode coordinates of long: " + long + "| lat: " + lat + " is the city of " + result.display_name + " at long: " + result.lon + " and lat: " + result.lat
+                                    }
+                                });
+                        }
+                    })
+                .catch((err) => {
+                    this.setState({
+                        error: err
+                    });
+                })
+    }
 
     render() {
         return (
@@ -123,6 +190,14 @@ class Map extends Component {
                     </Marker> 
                 }
 
+                { this.state.closestCityToPoint.lat === 0 && this.state.closestCityToPoint.long === 0 ? "" : 
+                    <Marker position={[this.state.closestCityToPoint.lat, this.state.closestCityToPoint.long]}>
+                    <Popup>
+                        {this.state.closestCityToPoint.desc}
+                    </Popup>
+                    </Marker> 
+                }
+
                 { this.state.antipode.lat === 0 && this.state.antipode.long === 0 ? "" :
                     <Marker position={[this.state.antipode.lat, this.state.antipode.long]}>
                         <Popup>
@@ -130,6 +205,8 @@ class Map extends Component {
                         </Popup>
                     </Marker>  
                 }
+
+                
             </LeafletMap>
 
             <div className="startMenu">
